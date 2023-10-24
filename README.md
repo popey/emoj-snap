@@ -1,4 +1,5 @@
 # emoj-snap
+[![emoj](https://github.com/popey/emoj-snap/actions/workflows/test-snap-can-build.yml/badge.svg)](https://github.com/popey/emoj-snap/actions)
 
 [![emoj](https://snapcraft.io/emoj/badge.svg)](https://snapcraft.io/emoj)
 [![emoj](https://snapcraft.io/emoj/trending.svg?name=0)](https://snapcraft.io/emoj)
