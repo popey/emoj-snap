@@ -3,31 +3,21 @@ summary: emoj
 adopt-info: emoj
 description: |
   Find relevant emoji from text on the command-line.
-base: core20
+base: core24
 grade: stable
 confinement: strict
 
 apps:
   emoj:
-    command: bin/emoj
+    command: bin/npm run emoj
     plugs: [network, x11]
 
 parts:
   emoj:
     plugin: npm
     source: https://github.com/sindresorhus/emoj.git
-    #npm-node-version: "18.18.0"
-    npm-node-version: "16.15.0"    
-    override-pull: |
-      snapcraftctl pull
-      last_committed_tag="$(git describe --tags --abbrev=0)"
-      last_released_tag="$(snap info emoj | awk '$1 == "beta:" { print $2 }')"
-      # If the latest tag from the upstream project has not been released to
-      # beta, build that tag instead of master.
-      if [ "${last_committed_tag}" != "${last_released_tag}" ]; then
-        git fetch
-        git checkout "${last_committed_tag}"
-      fi
-      snapcraftctl set-version $(git describe --tags --abbrev=0).$(git rev-parse --short HEAD)
+    source-type: git
+    npm-include-node: true
+    npm-node-version: "22.5.1"
     stage-packages:
       - xsel
