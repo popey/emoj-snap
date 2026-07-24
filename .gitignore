@@ -1,0 +1,6 @@
+*.snap
+__pycache__/
+overlay/
+parts/
+prime/
+stage/
