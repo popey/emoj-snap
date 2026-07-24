@@ -28,7 +28,7 @@ jobs:
       - name: Test recipe
         run: python3 -m unittest discover -s tests -v
 
-      - name: Install pinned Snapcraft
+      - name: Install pinned build and review tools
         run: |
           sudo snap install snapcraft --classic --revision=18514
           sudo snap install review-tools --revision=4865
@@ -37,9 +37,13 @@ jobs:
       - name: Build snap
         id: build
         run: |
+          shopt -s nullglob
+          BEFORE=("$GITHUB_WORKSPACE"/*.snap)
+          test "${#BEFORE[@]}" -eq 0
           snapcraft pack --use-lxd
-          SNAP="$(find "$GITHUB_WORKSPACE" -maxdepth 1 -type f -name '*.snap' -print -quit)"
-          test -n "$SNAP"
+          ARTIFACTS=("$GITHUB_WORKSPACE"/*.snap)
+          test "${#ARTIFACTS[@]}" -eq 1
+          SNAP="${ARTIFACTS[0]}"
           echo "snap=$SNAP" >> "$GITHUB_OUTPUT"
 
       - name: Repack snap for Store review

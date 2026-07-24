@@ -111,10 +111,45 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(triggers["pull_request"]["branches"], ["main"])
         self.assertEqual(checkout["with"]["persist-credentials"], False)
         step_names = [step["name"] for step in build_steps]
+        pinned_tools = step_names.index("Install pinned build and review tools")
+        build = step_names.index("Build snap")
         repack = step_names.index("Repack snap for Store review")
         review = step_names.index("Review snap")
+        smoke = step_names.index("Install and smoke-test snap")
+        upload = step_names.index("Upload artifact")
+        steps_by_name = {step["name"]: step for step in build_steps}
 
+        self.assertLess(pinned_tools, build)
+        self.assertLess(build, repack)
         self.assertLess(repack, review)
+        self.assertLess(review, smoke)
+        self.assertLess(smoke, upload)
+        build_step = steps_by_name["Build snap"]
+        tool_step = steps_by_name["Install pinned build and review tools"]
+        repack_step = steps_by_name["Repack snap for Store review"]
+        smoke_step = steps_by_name["Install and smoke-test snap"]
+        upload_step = steps_by_name["Upload artifact"]
+        self.assertIn("snapcraft --classic --revision=18514", tool_step["run"])
+        self.assertIn("review-tools --revision=4865", tool_step["run"])
+        self.assertNotIn("uses", build_step)
+        self.assertIn("snapcraft pack --use-lxd", build_step["run"])
+        self.assertIn('test "${#BEFORE[@]}" -eq 0', build_step["run"])
+        self.assertIn('test "${#ARTIFACTS[@]}" -eq 1', build_step["run"])
+        self.assertIn("unsquashfs", repack_step["run"])
+        self.assertIn("snapcraft pack", repack_step["run"])
+        self.assertNotIn("uses", steps_by_name["Review snap"])
+        self.assertIn(
+            'review-tools.snap-review "$SNAP"',
+            steps_by_name["Review snap"]["run"],
+        )
+        self.assertIn("sudo snap install --dangerous", smoke_step["run"])
+        self.assertIn("snap run emoj unicorn --limit=1", smoke_step["run"])
+        self.assertIn("$SNAP/bin/node --version", smoke_step["run"])
+        self.assertEqual(
+            upload_step["uses"],
+            "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+        )
+        self.assertEqual(upload_step["with"]["path"], "${{ steps.build.outputs.snap }}")
         self.assertIn("python3 -m unittest discover -s tests -v", commands)
         self.assertIn("python3-yaml=6.0.1-2build2", commands)
         self.assertIn("squashfs-tools=1:4.6.1-1build1", commands)
