@@ -43,4 +43,4 @@ parts:
       chmod 755 "${CRAFT_PART_INSTALL}/lib/node_modules/emoj/distribution/cli.js"
       ln -s ../lib/node_modules/emoj/distribution/cli.js "${CRAFT_PART_INSTALL}/bin/emoj"
     stage-packages:
-      - xsel
+      - xsel=1.2.1-1

@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -21,14 +21,26 @@ jobs:
           persist-credentials: false
 
       - name: Install test dependencies
-        run: sudo apt-get update && sudo apt-get install --yes python3-yaml squashfs-tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes python3-yaml=6.0.1-2build2 squashfs-tools=1:4.6.1-1build1
 
       - name: Test recipe
         run: python3 -m unittest discover -s tests -v
 
+      - name: Install pinned Snapcraft
+        run: |
+          sudo snap install snapcraft --classic --revision=18514
+          sudo snap install review-tools --revision=4865
+          test "$(snapcraft --version)" = "snapcraft 9.0.1"
+
       - name: Build snap
-        uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1.3.0
         id: build
+        run: |
+          snapcraft pack --use-lxd
+          SNAP="$(find "$GITHUB_WORKSPACE" -maxdepth 1 -type f -name '*.snap' -print -quit)"
+          test -n "$SNAP"
+          echo "snap=$SNAP" >> "$GITHUB_OUTPUT"
 
       - name: Repack snap for Store review
         env:
@@ -42,10 +54,9 @@ jobs:
           install -m 0644 "$REPACKED" "$SNAP"
 
       - name: Review snap
-        uses: diddlesnaps/snapcraft-review-action@40554b42331cf84dab19ef98c382620427f13482 # v1.3.1
-        with:
-          snap: ${{ steps.build.outputs.snap }}
-          isClassic: 'false'
+        env:
+          SNAP: ${{ steps.build.outputs.snap }}
+        run: review-tools.snap-review "$SNAP"
 
       - name: Install and smoke-test snap
         env:
@@ -54,6 +65,7 @@ jobs:
           sudo snap install --dangerous "$SNAP"
           snap run emoj --help
           test "$(snap run emoj unicorn --limit=1)" = "🦄"
+          # shellcheck disable=SC2016 -- expand $SNAP inside snap's shell.
           test "$(snap run --shell emoj -c '$SNAP/bin/node --version')" = "v22.23.1"
 
       - name: Upload artifact
