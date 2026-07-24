@@ -32,6 +32,10 @@ jobs:
         run: |
           sudo snap install snapcraft --classic --revision=18514
           sudo snap install review-tools --revision=4865
+          sudo snap install lxd --revision=40074
+          sudo usermod --append --groups lxd "$USER"
+          sudo lxd waitready --timeout=60
+          sudo lxd init --auto
           test "$(snapcraft --version)" = "snapcraft 9.0.1"
 
       - name: Build snap
@@ -40,7 +44,7 @@ jobs:
           shopt -s nullglob
           BEFORE=("$GITHUB_WORKSPACE"/*.snap)
           test "${#BEFORE[@]}" -eq 0
-          snapcraft pack --use-lxd
+          sg lxd -c 'snapcraft pack --use-lxd'
           ARTIFACTS=("$GITHUB_WORKSPACE"/*.snap)
           test "${#ARTIFACTS[@]}" -eq 1
           SNAP="${ARTIFACTS[0]}"

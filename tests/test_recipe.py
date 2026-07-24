@@ -131,8 +131,12 @@ class WorkflowTest(unittest.TestCase):
         upload_step = steps_by_name["Upload artifact"]
         self.assertIn("snapcraft --classic --revision=18514", tool_step["run"])
         self.assertIn("review-tools --revision=4865", tool_step["run"])
+        self.assertIn("lxd --revision=40074", tool_step["run"])
+        self.assertIn('usermod --append --groups lxd "$USER"', tool_step["run"])
+        self.assertIn("lxd waitready --timeout=60", tool_step["run"])
+        self.assertIn("lxd init --auto", tool_step["run"])
         self.assertNotIn("uses", build_step)
-        self.assertIn("snapcraft pack --use-lxd", build_step["run"])
+        self.assertIn("sg lxd -c 'snapcraft pack --use-lxd'", build_step["run"])
         self.assertIn('test "${#BEFORE[@]}" -eq 0', build_step["run"])
         self.assertIn('test "${#ARTIFACTS[@]}" -eq 1', build_step["run"])
         self.assertIn("unsquashfs", repack_step["run"])
