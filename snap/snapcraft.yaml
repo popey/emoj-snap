@@ -1,6 +1,6 @@
 name: emoj
 summary: emoj
-version: 'latest'
+version: '4.2.0'
 description: |
   Find relevant emoji from text on the command-line.
 base: core24
@@ -9,7 +9,7 @@ confinement: strict
 
 apps:
   emoj:
-    command: bin/npm run emoj
+    command: bin/emoj
     plugs: [network, x11]
 
 parts:
@@ -17,7 +17,13 @@ parts:
     plugin: npm
     source: https://github.com/sindresorhus/emoj.git
     source-type: git
+    source-tag: v4.2.0
     npm-include-node: true
-    npm-node-version: "22.5.1"
+    npm-node-version: "22.23.1"
+    override-build: |
+      craftctl default
+      npm install --include=dev
+      npm run build
+      npm install -g --prefix "${CRAFT_PART_INSTALL}" --install-links "${PWD}"
     stage-packages:
       - xsel
