@@ -17,6 +17,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install --yes python3-yaml
 
       - name: Test recipe
         run: python3 -m unittest discover -s tests -v
@@ -30,6 +35,15 @@ jobs:
         with:
           snap: ${{ steps.build.outputs.snap }}
           isClassic: 'false'
+
+      - name: Install and smoke-test snap
+        env:
+          SNAP: ${{ steps.build.outputs.snap }}
+        run: |
+          sudo snap install --dangerous "$SNAP"
+          snap run emoj --help
+          test "$(snap run emoj unicorn --limit=1)" = "🦄"
+          test "$(snap run --shell emoj -c '$SNAP/bin/node --version')" = "v22.23.1"
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

@@ -17,13 +17,30 @@ parts:
     plugin: npm
     source: https://github.com/sindresorhus/emoj.git
     source-type: git
-    source-tag: v4.2.0
+    # Immutable commit underlying the annotated v4.2.0 tag.
+    source-commit: 3e59ea0925001d0677b36c982ed53c4c0c9e6962
     npm-include-node: true
     npm-node-version: "22.23.1"
     override-build: |
-      craftctl default
-      npm install --include=dev
+      # Let the plugin provision Node, but do not let its default global install
+      # resolve or execute upstream dependency ranges. The real installation
+      # below is driven by our reviewed lockfile.
+      cp package.json package.json.upstream
+      python3 -c 'import json; p=json.load(open("package.json")); p.update({"bin": {}, "dependencies": {}, "devDependencies": {}, "scripts": {}}); open("package.json", "w").write(json.dumps(p))'
+      npm_config_ignore_scripts=true craftctl default
+      mv package.json.upstream package.json
+      python3 -c 'import os, shutil; [shutil.rmtree(p, ignore_errors=True) for p in (os.environ["CRAFT_PART_INSTALL"] + "/lib/node_modules/emoj",)]; [os.unlink(p) for p in (os.environ["CRAFT_PART_INSTALL"] + "/bin/emoj",) if os.path.lexists(p)]'
+
+      cp "${CRAFT_PROJECT_DIR}/snap/local/package-lock.json" .
+      npm ci --include=dev --ignore-scripts --package-lock=true
       npm run build
-      npm install -g --prefix "${CRAFT_PART_INSTALL}" --install-links "${PWD}"
+      npm prune --omit=dev --ignore-scripts
+
+      install -d "${CRAFT_PART_INSTALL}/bin"
+      install -d "${CRAFT_PART_INSTALL}/lib/node_modules/emoj"
+      cp package.json "${CRAFT_PART_INSTALL}/lib/node_modules/emoj/"
+      cp -a distribution node_modules "${CRAFT_PART_INSTALL}/lib/node_modules/emoj/"
+      chmod 755 "${CRAFT_PART_INSTALL}/lib/node_modules/emoj/distribution/cli.js"
+      ln -s ../lib/node_modules/emoj/distribution/cli.js "${CRAFT_PART_INSTALL}/bin/emoj"
     stage-packages:
       - xsel
