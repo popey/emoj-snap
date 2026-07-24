@@ -59,7 +59,14 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(triggers["push"]["branches"], ["main"])
         self.assertEqual(triggers["pull_request"]["branches"], ["main"])
         self.assertEqual(checkout["with"]["persist-credentials"], False)
+        step_names = [step["name"] for step in build_steps]
+        repack = step_names.index("Repack snap for Store review")
+        review = step_names.index("Review snap")
+
+        self.assertLess(repack, review)
         self.assertIn("python3 -m unittest discover -s tests -v", commands)
+        self.assertIn("unsquashfs", commands)
+        self.assertIn("snapcraft pack", commands)
         self.assertIn("sudo snap install --dangerous", commands)
         self.assertIn("snap run emoj unicorn --limit=1", commands)
         self.assertIn("$SNAP/bin/node --version", commands)
