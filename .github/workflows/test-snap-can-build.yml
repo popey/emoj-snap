@@ -32,10 +32,6 @@ jobs:
         run: |
           sudo snap install snapcraft --classic --revision=18514
           sudo snap install review-tools --revision=4865
-          sudo snap install lxd --revision=40074
-          sudo usermod --append --groups lxd "$USER"
-          sudo lxd waitready --timeout=60
-          sudo lxd init --auto
           test "$(snapcraft --version)" = "snapcraft 9.0.1"
 
       - name: Build snap
@@ -44,7 +40,10 @@ jobs:
           shopt -s nullglob
           BEFORE=("$GITHUB_WORKSPACE"/*.snap)
           test "${#BEFORE[@]}" -eq 0
-          sg lxd -c 'snapcraft pack --use-lxd'
+          # ubuntu-24.04 matches core24, so build directly on the disposable
+          # runner. This avoids relying on the public LXD image server, which
+          # intermittently rejects GitHub-hosted runner downloads.
+          sudo --preserve-env=GITHUB_WORKSPACE snapcraft pack --destructive-mode
           ARTIFACTS=("$GITHUB_WORKSPACE"/*.snap)
           test "${#ARTIFACTS[@]}" -eq 1
           SNAP="${ARTIFACTS[0]}"
