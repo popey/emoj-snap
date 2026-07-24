@@ -71,6 +71,10 @@ class RecipeTest(unittest.TestCase):
         build = recipe["parts"]["emoj"]["override-build"]
 
         self.assertEqual(recipe["apps"]["emoj"]["command"], "bin/emoj")
+        self.assertEqual(
+            recipe["apps"]["emoj"]["environment"]["XDG_CONFIG_HOME"],
+            "$SNAP_USER_DATA/.config",
+        )
         save_manifest = build.index("cp package.json package.json.upstream")
         inert_manifest = build.index('p.update({"bin": {}, "dependencies": {}, "devDependencies": {}, "scripts": {}})')
         plugin_default = build.index("npm_config_ignore_scripts=true craftctl default")

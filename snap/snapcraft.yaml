@@ -10,6 +10,9 @@ confinement: strict
 apps:
   emoj:
     command: bin/emoj
+    environment:
+      # conf defaults to $HOME/.config, which strict confinement cannot write.
+      XDG_CONFIG_HOME: $SNAP_USER_DATA/.config
     plugs: [network, x11]
 
 parts:
